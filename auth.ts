@@ -1,7 +1,6 @@
-import CredentialsProvider from "next-auth/providers/credentials";
-import { type NextAuthOptions } from "next-auth";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 export const authOptions = {
   providers: [
@@ -17,30 +16,46 @@ export const authOptions = {
           throw new Error("Invalid credentials");
         }
 
-        const user = await prisma.user.findUnique({
+        // Busca el usuario por email
+        let user = await prisma.user.findUnique({
           where: { email: credentials.email },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            password: true,
+          },
         });
 
+        // Si no existe, lo crea
         if (!user) {
-          return await prisma.user.create({
+          user = await prisma.user.create({
             data: {
               name: credentials.name ?? credentials.email,
               email: credentials.email,
               password: await bcrypt.hash(credentials.password, 10),
             },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              password: true,
+            },
           });
         }
 
+        // Verifica la contraseña
         const isCorrectPassword = await bcrypt.compare(
           credentials.password,
           user.password
         );
-
         if (!isCorrectPassword) {
           throw new Error("Invalid credentials");
         }
 
-        return user;
+        // Retorna el usuario sin el password
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
       },
     }),
   ],
@@ -48,11 +63,11 @@ export const authOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
-      return { ...token, id: token.id ?? user?.id };
+    async session({ session, user, token }) {
+      return session;
     },
-    async session({ session, token }) {
-      return { ...session, user: { ...session.user, id: token.id } };
+    async jwt({ token, user }) {
+      return token;
     },
   },
 } satisfies NextAuthOptions;

@@ -4,10 +4,6 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Limpia datos previos (solo para desarrollo)
-  await prisma.dicomFile.deleteMany();
-  await prisma.user.deleteMany();
-
   // Crea usuarios
   const passwordHash = await bcrypt.hash('password123', 10);
 

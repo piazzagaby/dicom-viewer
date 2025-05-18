@@ -22,7 +22,22 @@ export default function LoginPage() {
         setError("Invalid credentials");
         return;
       }
+      setTimeout(async () => {
+        const sessionRes = await fetch("/api/auth/session");
+        const session = await sessionRes.json();
+        const role = session?.user?.role;
 
+        if (role === "PATIENT") {
+          router.push("/dashboard/patient");
+        } else if (role === "DOCTOR") {
+          router.push("/dashboard/doctor");
+        } else if (role === "HOSPITAL") {
+          router.push("/dashboard/hospital");
+        } else {
+          router.push("/");
+        }
+        router.refresh();
+      }, 100);
       router.push("/");
       router.refresh();
     } catch {

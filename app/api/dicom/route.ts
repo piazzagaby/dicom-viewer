@@ -43,6 +43,12 @@ export async function GET(req: NextRequest) {
       filename: true,
       uploadedAt: true,
       patientId: true,
+      patient: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
     },
   });
 
