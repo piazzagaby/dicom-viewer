@@ -13,21 +13,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id       String  @id @default(cuid())
-  name     String?
-  email    String  @unique
-  password String
-  posts    Post[]
+enum Role {
+  PATIENT
+  DOCTOR
+  HOSPITAL
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String?
-  author    User?    @relation(fields: [authorId], references: [id])
+model User {
+  id         String      @id @default(uuid())
+  name       String?
+  email      String      @unique
+  password   String
+  role       Role        @default(PATIENT)
+  dicomFiles DicomFile[] @relation("UploadedFiles")
+  patients   User[]      @relation("DoctorPatients")
+  doctors    User[]      @relation("DoctorPatients")
+  DicomFile  DicomFile[]
+}
+
+model DicomFile {
+  id           String   @id @default(uuid())
+  filename     String
+  path         String
+  uploadedAt   DateTime @default(now())
+  uploadedBy   User     @relation("UploadedFiles", fields: [uploadedById], references: [id])
+  uploadedById String
+  patient      User?    @relation(fields: [patientId], references: [id])
+  patientId    String?
 }
