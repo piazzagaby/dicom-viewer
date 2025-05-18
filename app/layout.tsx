@@ -4,8 +4,8 @@ import Header from "./Header";
 import Providers from "./providers";
 
 export const metadata = {
-  title: "Superblog",
-  description: "A blog app using Next.js and Prisma",
+  title: "Dicom Viewer",
+  description: "Plataforma para gestionar, subir y visualizar archivos DICOM",
 };
 
 export default function RootLayout({
