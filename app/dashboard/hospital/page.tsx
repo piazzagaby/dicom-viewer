@@ -2,7 +2,6 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 
 type DicomFile = {
   id: string;
@@ -11,12 +10,12 @@ type DicomFile = {
   patientId: string;
   uploadedById: string;
   patient?: { name?: string | null; email: string };
+  uploadedBy?: { role: string; name?: string | null; email: string };
 };
 
-export default function DoctorDashboard() {
+export default function HospitalDashboard() {
   const { data: session, status } = useSession();
-  const [myDicomFiles, setMyDicomFiles] = useState<DicomFile[]>([]);
-  const [patientDicomFiles, setPatientDicomFiles] = useState<DicomFile[]>([]);
+  const [dicomFiles, setDicomFiles] = useState<DicomFile[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,48 +23,45 @@ export default function DoctorDashboard() {
       setLoading(true);
       const res = await fetch("/api/dicom");
       const data: DicomFile[] = await res.json();
-      if (session?.user?.id) {
-        setMyDicomFiles(data.filter(f => f.uploadedById === session.user.id));
-        setPatientDicomFiles(data.filter(f => f.uploadedById !== session.user.id));
-      }
+      setDicomFiles(data);
       setLoading(false);
     }
-    if (session?.user?.id) fetchDicomFiles();
-  }, [session?.user?.id]);
+    fetchDicomFiles();
+  }, []);
+
+  // Filtra imágenes por rol de quien las subió
+  const doctorFiles = dicomFiles.filter(f => f.uploadedBy?.role === "DOCTOR");
+  const patientFiles = dicomFiles.filter(f => f.uploadedBy?.role === "PATIENT");
 
   if (status === "loading") return <div>Loading...</div>;
   if (!session) return <div>Please log in to view your dashboard.</div>;
 
   return (
     <div className="max-w-6xl mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-4">Dashboard del Doctor</h1>
+      <h1 className="text-2xl font-bold mb-4">Dashboard del Hospital</h1>
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Izquierda: Imágenes del doctor */}
+        {/* Tabla izquierda: Imágenes subidas por doctores */}
         <div className="flex-1">
-          <h2 className="text-lg font-semibold mb-2">Mis imágenes DICOM</h2>
-          <Link
-            href="/doctor/upload"
-            className="inline-block mb-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Subir nuevo archivo DICOM
-          </Link>
+          <h2 className="text-lg font-semibold mb-2">Imágenes subidas por doctores</h2>
           {loading ? (
             <div>Cargando...</div>
-          ) : myDicomFiles.length === 0 ? (
-            <div>No has subido imágenes.</div>
+          ) : doctorFiles.length === 0 ? (
+            <div>No hay imágenes subidas por doctores.</div>
           ) : (
             <table className="w-full text-sm border">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="p-2">Archivo</th>
+                  <th className="p-2">Paciente</th>
                   <th className="p-2">Fecha</th>
                   <th className="p-2">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {myDicomFiles.map(file => (
+                {doctorFiles.map(file => (
                   <tr key={file.id} className="border-t">
                     <td className="p-2">{file.filename}</td>
+                    <td className="p-2">{file.patient?.name || file.patientId}</td>
                     <td className="p-2">{new Date(file.uploadedAt).toLocaleString()}</td>
                     <td className="p-2">
                       <a
@@ -82,13 +78,13 @@ export default function DoctorDashboard() {
             </table>
           )}
         </div>
-        {/* Derecha: Imágenes de pacientes */}
+        {/* Tabla derecha: Imágenes subidas por pacientes */}
         <div className="flex-1">
-          <h2 className="text-lg font-semibold mb-2">Imágenes de pacientes</h2>
+          <h2 className="text-lg font-semibold mb-2">Imágenes subidas por pacientes</h2>
           {loading ? (
             <div>Cargando...</div>
-          ) : patientDicomFiles.length === 0 ? (
-            <div>No hay imágenes de pacientes.</div>
+          ) : patientFiles.length === 0 ? (
+            <div>No hay imágenes subidas por pacientes.</div>
           ) : (
             <table className="w-full text-sm border">
               <thead>
@@ -100,7 +96,7 @@ export default function DoctorDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {patientDicomFiles.map(file => (
+                {patientFiles.map(file => (
                   <tr key={file.id} className="border-t">
                     <td className="p-2">{file.filename}</td>
                     <td className="p-2">{file.patient?.name || file.patientId}</td>

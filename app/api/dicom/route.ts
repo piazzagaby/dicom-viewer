@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   let whereClause = {};
 
   if (user.role === "PATIENT") {
-    whereClause = { patientId: user.id };
+    whereClause = { uploadedById: user.id };
   } else if (user.role === "DOCTOR") {
     // Archivos de todos sus pacientes
     const patientIds = user.patients.map((p) => p.id);
@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
       filename: true,
       uploadedAt: true,
       patientId: true,
+      uploadedById: true,
       patient: {
         select: {
           name: true,

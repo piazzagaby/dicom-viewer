@@ -56,10 +56,11 @@ export default function PatientDashboard() {
                 {new Date(file.uploadedAt).toLocaleString()}
               </span>
               <Link
-                href={`/dicom/${file.id}`}
-                className="text-blue-600 hover:underline ml-4"
+                href={`/api/dicom/download/${file.id}`}
+                className="text-green-600 hover:underline"
+                download
               >
-                Ver
+                Descargar
               </Link>
             </li>
           ))}

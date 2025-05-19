@@ -22,6 +22,8 @@ export default function LoginPage() {
         setError("Invalid credentials");
         return;
       }
+
+      // Espera a que la sesión esté disponible y obtén el rol
       setTimeout(async () => {
         const sessionRes = await fetch("/api/auth/session");
         const session = await sessionRes.json();
@@ -38,8 +40,7 @@ export default function LoginPage() {
         }
         router.refresh();
       }, 100);
-      router.push("/");
-      router.refresh();
+
     } catch {
       setError("An error occurred during login");
     }

@@ -1,15 +1,18 @@
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import CredentialsProvider from "next-auth/providers/credentials";
+import type { NextAuthOptions } from "next-auth";
+import { Role } from "@prisma/client"; // <-- AGREGA ESTA LÍNEA
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        name: { label: "Name", type: "name" },
+        name: { label: "Name", type: "text" },
         password: { label: "Password", type: "password" },
+        role: { label: "Role", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -24,6 +27,7 @@ export const authOptions = {
             name: true,
             email: true,
             password: true,
+            role: true,
           },
         });
 
@@ -34,12 +38,14 @@ export const authOptions = {
               name: credentials.name ?? credentials.email,
               email: credentials.email,
               password: await bcrypt.hash(credentials.password, 10),
+              role: (credentials.role as Role) ?? "PATIENT", // <-- CORREGIDO
             },
             select: {
               id: true,
               name: true,
               email: true,
               password: true,
+              role: true,
             },
           });
         }
@@ -63,11 +69,19 @@ export const authOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async session({ session, user, token }) {
+    async session({ session, token }) {
+      if (session.user && token) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+      }
       return session;
     },
     async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
       return token;
     },
   },
-} satisfies NextAuthOptions;
+};
