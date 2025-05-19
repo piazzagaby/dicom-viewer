@@ -25,13 +25,19 @@ export async function GET(req: NextRequest) {
   let whereClause = {};
 
   if (user.role === "PATIENT") {
+    // Solo archivos subidos por el paciente
     whereClause = { uploadedById: user.id };
   } else if (user.role === "DOCTOR") {
-    // Archivos de todos sus pacientes
+    // Archivos subidos por el doctor o por sus pacientes
     const patientIds = user.patients.map((p) => p.id);
-    whereClause = { patientId: { in: patientIds } };
+    whereClause = {
+      OR: [
+        { uploadedById: user.id },
+        { uploadedById: { in: patientIds } }
+      ]
+    };
   } else if (user.role === "HOSPITAL") {
-    // Todos los archivos
+    // Hospital: ver todos los archivos (sin filtro)
     whereClause = {};
   }
 
@@ -46,6 +52,13 @@ export async function GET(req: NextRequest) {
       uploadedById: true,
       patient: {
         select: {
+          name: true,
+          email: true,
+        },
+      },
+      uploadedBy: {
+        select: {
+          role: true,
           name: true,
           email: true,
         },
